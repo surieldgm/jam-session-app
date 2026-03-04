@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { usePartySocket } from "../hooks/usePartySocket";
 import { useSessionIdentity } from "../hooks/useSessionIdentity";
-import type { Instrument, AssignedMusician, Musician, SetlistEntry, Song } from "../types";
+import type { Instrument, AssignedMusician, Musician, SetlistEntry, Song, Genre } from "../types";
 
 function getEventId(): string {
   return `jam-${new Date().toISOString().split("T")[0]}`;
@@ -543,12 +543,12 @@ function SongFormModal({
   onClose,
 }: {
   song: Song | null;
-  onSave: (data: { title: string; artist: string; genre: string; youtubeUrl?: string }) => void;
+  onSave: (data: { title: string; artist: string; genre: Genre; youtubeUrl?: string }) => void;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(song?.title ?? "");
   const [artist, setArtist] = useState(song?.artist ?? "");
-  const [genre, setGenre] = useState(song?.genre ?? "jazz");
+  const [genre, setGenre] = useState<Genre>(song?.genre ?? "jazz");
   const [youtubeUrl, setYoutubeUrl] = useState(song?.youtubeUrl ?? "");
 
   const handleSubmit = useCallback(
@@ -603,7 +603,7 @@ function SongFormModal({
           />
           <select
             value={genre}
-            onChange={(e) => setGenre(e.target.value)}
+            onChange={(e) => setGenre(e.target.value as Genre)}
             className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-3 py-2.5 text-sm text-(--color-text-primary) outline-none focus:border-(--color-amber)"
           >
             <option value="jazz">Jazz</option>
