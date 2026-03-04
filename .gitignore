@@ -1,0 +1,11 @@
+node_modules
+dist
+.partykit
+.wrangler
+*.local
+.env
+.env.local
+.DS_Store
+test-results/
+playwright-report/
+blob-report/

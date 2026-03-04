@@ -1,0 +1,4 @@
+packages:
+  - packages/*
+
+approvedBuilds: esbuild,workerd

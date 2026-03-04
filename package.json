@@ -1,0 +1,22 @@
+{
+  "name": "jam-session-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real-time jam session management for live music events",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:party": "pnpm --filter party dev",
+    "dev:all": "pnpm --parallel --filter web --filter party dev",
+    "build": "pnpm --filter web build && pnpm --filter party build",
+    "deploy": "pnpm --filter web build && pnpm --filter party deploy",
+    "test:e2e": "pnpm --filter web exec playwright test",
+    "test:e2e:ui": "pnpm --filter web exec playwright test --ui",
+    "test:e2e:headed": "pnpm --filter web exec playwright test --headed"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "workerd"]
+  }
+}
