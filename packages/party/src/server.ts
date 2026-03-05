@@ -90,6 +90,7 @@ function createFreshState(mcPin: string = DEFAULT_MC_PIN): JamState {
     catalog: initCatalogFromDefaults(DEFAULT_CATALOG),
     pendingProposals: [],
     currentBlock: null,
+    timerRemaining: null,
     waitingQueue: [],
     setlistOfficial: [],
     setlistSuggested: [],
@@ -413,25 +414,43 @@ export default class JamRoom implements Party.Server {
     this.broadcast({ type: "full_state", payload: this.state });
   }
 
+  private getElapsedMs(): number {
+    if (!this.state.currentBlock) return 0;
+    const block = this.state.currentBlock;
+    if (block.pausedAt !== null) {
+      return block.accumulatedMs + (block.pausedAt - block.startTime);
+    }
+    return block.accumulatedMs + (Date.now() - block.startTime);
+  }
+
+  private getRemainingSeconds(): number {
+    return Math.max(0, Math.ceil((BLOCK_DURATION_MS - this.getElapsedMs()) / 1000));
+  }
+
+  private broadcastRemaining() {
+    const remaining = this.getRemainingSeconds();
+    this.state.timerRemaining = remaining;
+    this.broadcast({ type: "timer_tick", payload: { remaining } });
+  }
+
   private async handleTimerAction(payload: {
     action: "start" | "pause" | "reset";
   }) {
     switch (payload.action) {
       case "start":
         if (this.state.currentBlock) {
-          this.state.currentBlock.status = "playing";
-          this.state.currentBlock.startTime = Date.now();
+          const block = this.state.currentBlock;
+          if (block.pausedAt !== null) {
+            // Resume: accumulate elapsed from the paused segment
+            block.accumulatedMs += block.pausedAt - block.startTime;
+            block.startTime = Date.now();
+            block.pausedAt = null;
+          }
+          block.status = "playing";
           this.startTimer();
-          this.broadcast({
-            type: "block_started",
-            payload: {
-              songTitle: this.state.currentBlock.songTitle,
-              musicians: this.state.currentBlock.musicians,
-              startTime: this.state.currentBlock.startTime,
-            },
-          });
+          this.broadcastRemaining();
+          this.broadcast({ type: "full_state", payload: this.state });
         } else if (this.state.setlistOfficial.length > 0) {
-          // Start the next official block
           const next = this.state.setlistOfficial.shift()!;
           this.startBlock(next);
         }
@@ -440,7 +459,10 @@ export default class JamRoom implements Party.Server {
       case "pause":
         this.stopTimer();
         if (this.state.currentBlock) {
-          this.state.currentBlock.status = "transitioning";
+          this.state.currentBlock.pausedAt = Date.now();
+          this.state.currentBlock.status = "paused";
+          this.broadcastRemaining();
+          this.broadcast({ type: "full_state", payload: this.state });
         }
         break;
 
@@ -448,10 +470,15 @@ export default class JamRoom implements Party.Server {
         this.stopTimer();
         if (this.state.currentBlock) {
           this.state.currentBlock.startTime = Date.now();
+          this.state.currentBlock.accumulatedMs = 0;
+          this.state.currentBlock.pausedAt = Date.now();
+          this.state.currentBlock.status = "paused";
+          this.state.timerRemaining = BLOCK_DURATION_MS / 1000;
           this.broadcast({
             type: "timer_tick",
             payload: { remaining: BLOCK_DURATION_MS / 1000 },
           });
+          this.broadcast({ type: "full_state", payload: this.state });
         }
         break;
     }
@@ -551,11 +578,8 @@ export default class JamRoom implements Party.Server {
         return;
       }
 
-      const elapsed = Date.now() - this.state.currentBlock.startTime;
-      const remaining = Math.max(
-        0,
-        Math.ceil((BLOCK_DURATION_MS - elapsed) / 1000)
-      );
+      const remaining = this.getRemainingSeconds();
+      this.state.timerRemaining = remaining;
 
       this.broadcast({
         type: "timer_tick",
@@ -590,8 +614,11 @@ export default class JamRoom implements Party.Server {
       songTitle: entry.songTitle,
       musicians: entry.assignedMusicians,
       startTime: now,
+      accumulatedMs: 0,
+      pausedAt: null,
       status: "playing",
     };
+    this.state.timerRemaining = BLOCK_DURATION_MS / 1000;
 
     // Remove assigned musicians from waiting queue
     const assignedIds = new Set(
@@ -619,6 +646,7 @@ export default class JamRoom implements Party.Server {
 
     const block = this.state.currentBlock;
     const now = Date.now();
+    const totalElapsed = this.getElapsedMs();
 
     const completed: CompletedBlock = {
       songId: block.songId,
@@ -628,7 +656,7 @@ export default class JamRoom implements Party.Server {
       musicians: block.musicians,
       startedAt: block.startTime,
       endedAt: now,
-      duration: Math.round((now - block.startTime) / 1000),
+      duration: Math.round(totalElapsed / 1000),
     };
 
     this.state.history.push(completed);

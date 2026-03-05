@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { usePartySocket } from "../hooks/usePartySocket";
 import { useSessionIdentity } from "../hooks/useSessionIdentity";
 import type { Instrument, AssignedMusician, Musician, SetlistEntry, Song, Genre } from "../types";
@@ -85,27 +85,49 @@ function PinGate({ onAuth }: { onAuth: (pin: string) => void }) {
 
 // ─── Timer Component ───────────────────────────────────────────────
 function Timer({
-  startTime,
+  serverRemaining,
+  isPaused,
   onAction,
 }: {
-  startTime: number;
+  serverRemaining: number;
+  isPaused: boolean;
   onAction: (action: "start" | "pause" | "reset") => void;
 }) {
-  const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
-  const mins = Math.floor(elapsed / 60);
-  const secs = elapsed % 60;
+  const [remaining, setRemaining] = useState(serverRemaining);
+
+  // Sync with server-broadcast remaining
+  useEffect(() => {
+    setRemaining(serverRemaining);
+  }, [serverRemaining]);
+
+  // Client-side countdown interval (only while playing)
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
 
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="font-mono text-5xl font-bold tabular-nums text-(--color-text-primary)">
         {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
       </p>
+      {isPaused && (
+        <span className="text-xs font-medium uppercase tracking-wider text-(--color-amber)">
+          En pausa
+        </span>
+      )}
       <div className="flex gap-2">
         <button
           onClick={() => onAction("start")}
           className="rounded-lg bg-(--color-green)/20 px-4 py-2 text-sm font-medium text-(--color-green) hover:bg-(--color-green)/30"
         >
-          Play
+          {isPaused ? "Reanudar" : "Play"}
         </button>
         <button
           onClick={() => onAction("pause")}
@@ -127,14 +149,16 @@ function Timer({
 // ─── Tab: En Vivo ──────────────────────────────────────────────────
 function TabLive({
   currentBlock,
+  timerRemaining,
   onTimerAction,
 }: {
   currentBlock: {
     songTitle: string;
     musicians: AssignedMusician[];
     startTime: number;
-    status: "playing" | "transitioning";
+    status: "playing" | "paused";
   } | null;
+  timerRemaining: number | null;
   onTimerAction: (action: "start" | "pause" | "reset") => void;
 }) {
   if (!currentBlock) {
@@ -172,7 +196,11 @@ function TabLive({
         </div>
       </div>
 
-      <Timer startTime={currentBlock.startTime} onAction={onTimerAction} />
+      <Timer
+        serverRemaining={timerRemaining ?? 420}
+        isPaused={currentBlock.status === "paused"}
+        onAction={onTimerAction}
+      />
     </div>
   );
 }
@@ -913,6 +941,7 @@ export default function MCDashboard() {
         {activeTab === "live" && (
           <TabLive
             currentBlock={state?.currentBlock ?? null}
+            timerRemaining={state?.timerRemaining ?? null}
             onTimerAction={handleTimerAction}
           />
         )}

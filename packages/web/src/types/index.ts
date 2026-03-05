@@ -83,8 +83,11 @@ export interface JamState {
     songTitle: string;
     musicians: AssignedMusician[];
     startTime: number;
-    status: "playing" | "transitioning";
+    accumulatedMs: number;
+    pausedAt: number | null;
+    status: "playing" | "paused";
   } | null;
+  timerRemaining: number | null;
 
   waitingQueue: Musician[];
   setlistOfficial: SetlistEntry[];

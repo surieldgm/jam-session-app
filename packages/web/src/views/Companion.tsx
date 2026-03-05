@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePartySocket } from "../hooks/usePartySocket";
 import type { AssignedMusician, SetlistEntry } from "../types";
 
@@ -15,11 +15,28 @@ function getEventId(): string {
   return `jam-${new Date().toISOString().split("T")[0]}`;
 }
 
-function formatTime(startTime: number): string {
-  const elapsed = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
-  const mins = Math.floor(elapsed / 60);
-  const secs = elapsed % 60;
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+function CountdownTimer({ serverRemaining, isPaused }: { serverRemaining: number; isPaused: boolean }) {
+  const [remaining, setRemaining] = useState(serverRemaining);
+
+  useEffect(() => {
+    setRemaining(serverRemaining);
+  }, [serverRemaining]);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPaused]);
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  return (
+    <p className="mt-4 font-mono text-6xl font-bold tabular-nums text-(--color-text-primary) sm:text-7xl">
+      {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+    </p>
+  );
 }
 
 function MusicianBadge({ musician }: { musician: AssignedMusician }) {
@@ -122,9 +139,10 @@ export default function Companion() {
       </h1>
 
       {/* Timer */}
-      <p className="mt-4 font-mono text-6xl font-bold tabular-nums text-(--color-text-primary) sm:text-7xl">
-        {formatTime(currentBlock.startTime)}
-      </p>
+      <CountdownTimer
+        serverRemaining={state.timerRemaining ?? 420}
+        isPaused={currentBlock.status === "paused"}
+      />
 
       {/* Musicians on stage */}
       <div className="mt-8">

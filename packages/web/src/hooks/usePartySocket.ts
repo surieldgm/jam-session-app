@@ -134,19 +134,23 @@ export function usePartySocket({ eventId }: UsePartySocketOptions): UsePartySock
                 songTitle: msg.payload.songTitle,
                 musicians: msg.payload.musicians,
                 startTime: msg.payload.startTime,
+                accumulatedMs: 0,
+                pausedAt: null,
                 status: "playing",
               },
+              timerRemaining: 420, // 7 min default
               version: prev.version + 1,
             };
           });
           break;
 
         case "timer_tick":
-          // Timer tick is informational; components can use state.currentBlock.startTime
-          // or we store remaining time on state if needed
           setState((prev) => {
             if (!prev) return prev;
-            return { ...prev, _timerRemaining: msg.payload.remaining } as JamState;
+            return {
+              ...prev,
+              timerRemaining: msg.payload.remaining,
+            };
           });
           break;
 

@@ -167,32 +167,32 @@ test.describe.serial("MC Dashboard – Live tab (En Vivo)", () => {
   }) => {
     await setupLiveBlock(page);
 
-    // Start the timer and let it run
+    // Start the timer and let it run (countdown from 07:00)
     await page.locator('button:has-text("Play")').click();
     await page.waitForTimeout(3000);
 
-    // The timer should have advanced beyond 00:00
+    // The timer should have counted down from 07:00 (so < 07:00)
     const timerEl = page.locator(".font-mono.text-5xl");
     const runningValue = await timerEl.textContent();
-    expect(runningValue).not.toBe("00:00");
+    expect(runningValue).not.toBe("07:00");
 
-    // Click Reset – this resets startTime to now, so the timer goes back to ~00:00
+    // Click Reset – this resets the timer back to 07:00
     await page.locator('button:has-text("Reset")').click();
 
     // Allow a brief moment for the UI to re-render
     await page.waitForTimeout(500);
 
-    // After reset, the timer should be near 00:00 (within a couple of seconds)
+    // After reset, the timer should be back at 07:00
     const resetValue = await timerEl.textContent();
     expect(resetValue).toBeTruthy();
 
-    // Parse the reset timer value – it should be 00:00 or 00:01 at most
+    // Parse the reset timer value – it should be 07:00 (420 seconds)
     const match = resetValue!.match(/(\d{2}):(\d{2})/);
     expect(match).toBeTruthy();
     const minutes = parseInt(match![1], 10);
     const seconds = parseInt(match![2], 10);
     const totalSeconds = minutes * 60 + seconds;
-    expect(totalSeconds).toBeLessThanOrEqual(5);
+    expect(totalSeconds).toBeGreaterThanOrEqual(415); // ~07:00
 
     ws.close();
   });
