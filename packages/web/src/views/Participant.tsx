@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { usePartySocket } from "../hooks/usePartySocket";
 import { useSessionIdentity } from "../hooks/useSessionIdentity";
-import type { Instrument } from "../types";
+import type { Instrument, Genre } from "../types";
 import { v4 as uuidv4 } from "uuid";
 
 function getEventId(): string {
@@ -52,29 +52,60 @@ function InstrumentPicker({
   );
 }
 
+const GENRE_OPTIONS: { value: string; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "jazz", label: "Jazz" },
+  { value: "blues", label: "Blues" },
+  { value: "funk", label: "Funk" },
+  { value: "groove", label: "Groove" },
+  { value: "latin", label: "Latin" },
+  { value: "other", label: "Otro" },
+];
+
 // ─── Step 2: Song Selector ─────────────────────────────────────────
 function SongSelector({
   catalog,
   selectedSongs,
   onToggle,
   maxReached,
+  onPropose,
 }: {
-  catalog: { id: string; title: string; artist: string }[];
+  catalog: { id: string; title: string; artist: string; genre: string }[];
   selectedSongs: string[];
   onToggle: (songId: string) => void;
   maxReached: boolean;
+  onPropose: (data: { title: string; artist: string; genre: Genre; youtubeUrl?: string }) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [genreFilter, setGenreFilter] = useState("all");
+  const [showProposalForm, setShowProposalForm] = useState(false);
+  const [proposalSent, setProposalSent] = useState(false);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return catalog;
-    const q = search.toLowerCase();
-    return catalog.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q)
-    );
-  }, [catalog, search]);
+    let result = catalog;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.artist.toLowerCase().includes(q)
+      );
+    }
+    if (genreFilter !== "all") {
+      result = result.filter((s) => s.genre === genreFilter);
+    }
+    return result;
+  }, [catalog, search, genreFilter]);
+
+  const handleProposalSubmit = useCallback(
+    (data: { title: string; artist: string; genre: Genre; youtubeUrl?: string }) => {
+      onPropose(data);
+      setShowProposalForm(false);
+      setProposalSent(true);
+      setTimeout(() => setProposalSent(false), 3000);
+    },
+    [onPropose]
+  );
 
   return (
     <div className="w-full max-w-sm">
@@ -85,14 +116,27 @@ function SongSelector({
         Selecciona hasta {MAX_SONGS} canciones que te gustaria tocar
       </p>
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Buscar cancion..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-4 py-3 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
-      />
+      {/* Search + Genre filter */}
+      <div className="mb-3 flex gap-2">
+        <input
+          type="text"
+          placeholder="Buscar cancion..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-3 py-2.5 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+        />
+        <select
+          value={genreFilter}
+          onChange={(e) => setGenreFilter(e.target.value)}
+          className="rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-2 py-2.5 text-xs text-(--color-text-primary) outline-none focus:border-(--color-amber)"
+        >
+          {GENRE_OPTIONS.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Song list */}
       <div className="flex max-h-64 flex-col gap-1.5 overflow-y-auto">
@@ -140,7 +184,115 @@ function SongSelector({
       <p className={`mt-3 text-center text-xs ${maxReached ? "font-semibold text-(--color-amber)" : "text-(--color-text-muted)"}`}>
         {selectedSongs.length}/{MAX_SONGS} seleccionada{selectedSongs.length !== 1 ? "s" : ""}
       </p>
+
+      {/* Propose song */}
+      {proposalSent && (
+        <p className="mt-2 text-center text-xs font-medium text-(--color-green)">
+          Propuesta enviada ✓
+        </p>
+      )}
+
+      {!showProposalForm ? (
+        <button
+          onClick={() => setShowProposalForm(true)}
+          className="mt-3 w-full rounded-lg border border-dashed border-(--color-text-muted) py-2.5 text-xs font-medium text-(--color-text-muted) hover:border-(--color-amber) hover:text-(--color-amber)"
+        >
+          + Proponer una cancion
+        </button>
+      ) : (
+        <ProposalForm
+          onSubmit={handleProposalSubmit}
+          onCancel={() => setShowProposalForm(false)}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Proposal Form (inline) ──────────────────────────────────────────
+function ProposalForm({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (data: { title: string; artist: string; genre: Genre; youtubeUrl?: string }) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
+  const [genre, setGenre] = useState<Genre>("jazz");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!title.trim() || !artist.trim()) return;
+      onSubmit({
+        title: title.trim(),
+        artist: artist.trim(),
+        genre,
+        youtubeUrl: youtubeUrl.trim() || undefined,
+      });
+    },
+    [title, artist, genre, youtubeUrl, onSubmit]
+  );
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mt-3 flex flex-col gap-2 rounded-xl border border-(--color-amber)/30 bg-(--color-bg-card) p-3"
+    >
+      <p className="text-xs font-semibold text-(--color-amber)">Proponer cancion</p>
+      <input
+        type="text"
+        placeholder="Titulo *"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Artista *"
+        value={artist}
+        onChange={(e) => setArtist(e.target.value)}
+        className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+        required
+      />
+      <select
+        value={genre}
+        onChange={(e) => setGenre(e.target.value as Genre)}
+        className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) outline-none focus:border-(--color-amber)"
+      >
+        <option value="jazz">Jazz</option>
+        <option value="blues">Blues</option>
+        <option value="funk">Funk</option>
+        <option value="groove">Groove</option>
+        <option value="latin">Latin</option>
+        <option value="other">Otro</option>
+      </select>
+      <input
+        type="url"
+        placeholder="Link YouTube (opcional)"
+        value={youtubeUrl}
+        onChange={(e) => setYoutubeUrl(e.target.value)}
+        className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-lg border border-(--color-bg-hover) py-2 text-xs font-medium text-(--color-text-secondary) hover:bg-(--color-bg-hover)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          className="flex-1 rounded-lg bg-(--color-amber) py-2 text-xs font-bold text-(--color-bg-primary) hover:bg-(--color-amber-dark)"
+        >
+          Enviar
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -230,7 +382,7 @@ export default function Participant() {
     if (!state) return [];
     return state.catalog
       .filter((s) => s.status === "active")
-      .map((s) => ({ id: s.id, title: s.title, artist: s.artist }));
+      .map((s) => ({ id: s.id, title: s.title, artist: s.artist, genre: s.genre }));
   }, [state]);
 
   const handleInstrumentSelect = useCallback((inst: Instrument) => {
@@ -246,6 +398,13 @@ export default function Participant() {
       return [...prev, songId];
     });
   }, []);
+
+  const handlePropose = useCallback(
+    (data: { title: string; artist: string; genre: Genre; youtubeUrl?: string }) => {
+      send({ type: "propose_song", payload: data });
+    },
+    [send]
+  );
 
   const handleConfirm = useCallback(() => {
     if (!instrument || !alias.trim()) return;
@@ -334,6 +493,7 @@ export default function Participant() {
             selectedSongs={selectedSongs}
             onToggle={handleSongToggle}
             maxReached={selectedSongs.length >= MAX_SONGS}
+            onPropose={handlePropose}
           />
 
           <div className="flex w-full gap-3">
