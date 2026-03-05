@@ -38,7 +38,7 @@ test.describe.serial("Real-time synchronization across browser contexts", () => 
 
     // Enter alias
     await participantPage.fill(
-      'input[placeholder="Tu nombre o alias"]',
+      'input[placeholder="Ej: Santi, El Baterista..."]',
       "Sync Drummer"
     );
 
@@ -93,7 +93,7 @@ test.describe.serial("Real-time synchronization across browser contexts", () => 
     await participantPage.goto("/participant");
     await participantPage.getByText("Bateria").click();
     await participantPage.fill(
-      'input[placeholder="Tu nombre o alias"]',
+      'input[placeholder="Ej: Santi, El Baterista..."]',
       "Song Viewer"
     );
     await participantPage.getByText("Siguiente").click();

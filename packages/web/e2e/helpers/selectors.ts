@@ -17,7 +17,7 @@ export const sel = {
   // ─── Participant ────────────────────────────────────────────────
   participant: {
     instrumentBtn: (label: string) => `button:has-text("${label}")`,
-    aliasInput: 'input[placeholder="Tu nombre o alias"]',
+    aliasInput: 'input[placeholder="Ej: Santi, El Baterista..."]',
     btnNext: 'button:has-text("Siguiente")',
     btnBack: 'button:has-text("Atras")',
 
@@ -51,7 +51,7 @@ export const sel = {
     btnPlay: 'button:has-text("Play")',
     btnPause: 'button:has-text("Pausa")',
     btnReset: 'button:has-text("Reset")',
-    timer: ".font-mono.text-5xl",
+    timer: ".font-mono.text-4xl",
 
     // Queue tab
     queueEmpty: "text=No hay musicos en espera",

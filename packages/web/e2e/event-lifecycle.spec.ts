@@ -35,7 +35,7 @@ test.describe.serial("Event lifecycle - golden path", () => {
 
     // Step 2b: Enter alias
     await participantPage.fill(
-      'input[placeholder="Tu nombre o alias"]',
+      'input[placeholder="Ej: Santi, El Baterista..."]',
       "Drummer Alex"
     );
 
@@ -160,7 +160,7 @@ test.describe.serial("Event lifecycle - golden path", () => {
 
     // ─── Step 9: MC controls timer ──────────────────────────────────
     // Already on En Vivo tab
-    const timer = mcPage.locator(".font-mono.text-5xl");
+    const timer = mcPage.locator(".font-mono.text-4xl");
     await expect(timer).toBeVisible({ timeout: 5000 });
 
     // Play and Pausa buttons should be visible

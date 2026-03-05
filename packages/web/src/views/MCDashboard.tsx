@@ -114,7 +114,7 @@ function Timer({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="font-mono text-5xl font-bold tabular-nums text-(--color-text-primary)">
+      <p className="font-mono text-4xl font-bold tabular-nums text-(--color-text-primary) sm:text-5xl">
         {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
       </p>
       {isPaused && (
@@ -122,7 +122,7 @@ function Timer({
           En pausa
         </span>
       )}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           onClick={() => onAction("start")}
           className="rounded-lg bg-(--color-green)/20 px-4 py-2 text-sm font-medium text-(--color-green) hover:bg-(--color-green)/30"

@@ -292,14 +292,19 @@ export default function Participant() {
             onSelect={handleInstrumentSelect}
           />
 
-          <input
-            type="text"
-            placeholder="Tu nombre o alias"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            maxLength={24}
-            className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-4 py-3 text-center text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
-          />
+          <div className="w-full">
+            <label className="mb-1.5 block text-center text-sm font-medium text-(--color-text-secondary)">
+              &iquest;C&oacute;mo te llamamos en el escenario?
+            </label>
+            <input
+              type="text"
+              placeholder="Ej: Santi, El Baterista..."
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              maxLength={24}
+              className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-card) px-4 py-3 text-center text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+            />
+          </div>
 
           <button
             onClick={() => setStep(2)}

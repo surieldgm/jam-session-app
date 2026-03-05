@@ -18,7 +18,7 @@ test.describe.serial("Reconnect and session persistence", () => {
     await page.getByText("Bateria").click();
 
     // Enter alias
-    await page.fill('input[placeholder="Tu nombre o alias"]', registeredAlias);
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', registeredAlias);
 
     // Click Siguiente to go to step 2 (song selection)
     await page.getByText("Siguiente").click();

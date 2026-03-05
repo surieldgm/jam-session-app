@@ -119,7 +119,7 @@ test.describe.serial("MC Dashboard – Live tab (En Vivo)", () => {
     await setupLiveBlock(page);
 
     // Read initial timer value
-    const timerEl = page.locator(".font-mono.text-5xl");
+    const timerEl = page.locator(".font-mono.text-4xl");
     await expect(timerEl).toBeVisible();
     const initialValue = await timerEl.textContent();
 
@@ -149,7 +149,7 @@ test.describe.serial("MC Dashboard – Live tab (En Vivo)", () => {
     await page.locator('button:has-text("Pausa")').click();
 
     // Read the timer value right after pausing
-    const timerEl = page.locator(".font-mono.text-5xl");
+    const timerEl = page.locator(".font-mono.text-4xl");
     await page.waitForTimeout(500);
     const pausedValue = await timerEl.textContent();
 
@@ -172,7 +172,7 @@ test.describe.serial("MC Dashboard – Live tab (En Vivo)", () => {
     await page.waitForTimeout(3000);
 
     // The timer should have counted down from 07:00 (so < 07:00)
-    const timerEl = page.locator(".font-mono.text-5xl");
+    const timerEl = page.locator(".font-mono.text-4xl");
     const runningValue = await timerEl.textContent();
     expect(runningValue).not.toBe("07:00");
 

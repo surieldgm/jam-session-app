@@ -45,7 +45,7 @@ test.describe.serial("Participant Registration Flow", () => {
     await expect(buttons).toHaveCount(6);
 
     // Verify alias input
-    const aliasInput = page.locator('input[placeholder="Tu nombre o alias"]');
+    const aliasInput = page.locator('input[placeholder="Ej: Santi, El Baterista..."]');
     await expect(aliasInput).toBeVisible();
 
     // Verify progress bar with 3 segments
@@ -63,11 +63,11 @@ test.describe.serial("Participant Registration Flow", () => {
     await expect(nextButton).toBeDisabled();
 
     // Only alias filled - still disabled
-    await page.fill('input[placeholder="Tu nombre o alias"]', "TestUser");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "TestUser");
     await expect(nextButton).toBeDisabled();
 
     // Clear alias, only instrument selected - still disabled
-    await page.fill('input[placeholder="Tu nombre o alias"]', "");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "");
     await page.click('button:has-text("Bateria")');
     await expect(nextButton).toBeDisabled();
   });
@@ -101,7 +101,7 @@ test.describe.serial("Participant Registration Flow", () => {
     await page.click('button:has-text("Guitarra")');
 
     // Enter alias
-    await page.fill('input[placeholder="Tu nombre o alias"]', "TestGuitarist");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "TestGuitarist");
 
     // Button should be enabled
     await expect(nextButton).toBeEnabled();
@@ -110,7 +110,7 @@ test.describe.serial("Participant Registration Flow", () => {
   test("5 - step 2 shows the catalog from the server", async ({ page }) => {
     // Complete step 1
     await page.click('button:has-text("Bateria")');
-    await page.fill('input[placeholder="Tu nombre o alias"]', "TestDrummer");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "TestDrummer");
     await page.click('button:has-text("Siguiente")');
 
     // Wait for step 2 heading
@@ -143,7 +143,7 @@ test.describe.serial("Participant Registration Flow", () => {
   }) => {
     // Complete step 1
     await page.click('button:has-text("Bajo")');
-    await page.fill('input[placeholder="Tu nombre o alias"]', "TestBassist");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "TestBassist");
     await page.click('button:has-text("Siguiente")');
 
     // Wait for step 2
@@ -180,7 +180,7 @@ test.describe.serial("Participant Registration Flow", () => {
   }) => {
     // Complete step 1
     await page.click('button:has-text("Teclado")');
-    await page.fill('input[placeholder="Tu nombre o alias"]', "TestPianist");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "TestPianist");
     await page.click('button:has-text("Siguiente")');
 
     // Wait for catalog to load
@@ -213,7 +213,7 @@ test.describe.serial("Participant Registration Flow", () => {
     // Complete step 1
     await page.click('button:has-text("Guitarra")');
     await page.fill(
-      'input[placeholder="Tu nombre o alias"]',
+      'input[placeholder="Ej: Santi, El Baterista..."]',
       "PreservedAlias"
     );
     await page.click('button:has-text("Siguiente")');
@@ -225,7 +225,7 @@ test.describe.serial("Participant Registration Flow", () => {
     await page.click('button:has-text("Atras")');
 
     // Verify alias is preserved
-    const aliasInput = page.locator('input[placeholder="Tu nombre o alias"]');
+    const aliasInput = page.locator('input[placeholder="Ej: Santi, El Baterista..."]');
     await expect(aliasInput).toHaveValue("PreservedAlias");
 
     // Verify instrument is still selected (Guitarra should have amber border)
@@ -242,7 +242,7 @@ test.describe.serial("Participant Registration Flow", () => {
   }) => {
     // Complete step 1
     await page.click('button:has-text("Voz")');
-    await page.fill('input[placeholder="Tu nombre o alias"]', "SingerAlias");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "SingerAlias");
     await page.click('button:has-text("Siguiente")');
 
     // Step 2: select 2 songs
@@ -284,7 +284,7 @@ test.describe.serial("Participant Registration Flow", () => {
   }) => {
     // Complete full registration flow
     await page.click('button:has-text("Bateria")');
-    await page.fill('input[placeholder="Tu nombre o alias"]', "DrummerQueue");
+    await page.fill('input[placeholder="Ej: Santi, El Baterista..."]', "DrummerQueue");
     await page.click('button:has-text("Siguiente")');
 
     // Step 2: select a song
@@ -328,7 +328,7 @@ test.describe.serial("Participant Registration Flow", () => {
     // Complete full registration flow
     await page.click('button:has-text("Vientos")');
     await page.fill(
-      'input[placeholder="Tu nombre o alias"]',
+      'input[placeholder="Ej: Santi, El Baterista..."]',
       "WindPlayerStorage"
     );
     await page.click('button:has-text("Siguiente")');
