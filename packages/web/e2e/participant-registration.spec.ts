@@ -190,21 +190,30 @@ test.describe.serial("Participant Registration Flow", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Initially 0 selected
-    await expect(page.getByText("0 seleccionadas")).toBeVisible();
+    await expect(page.getByText("0/3 seleccionadas")).toBeVisible();
 
     // Click 3 songs
     await page.locator('button:has-text("Watermelon Man")').click();
-    await expect(page.getByText("1 seleccionada")).toBeVisible();
+    await expect(page.getByText("1/3 seleccionada")).toBeVisible();
 
     await page.locator('button:has-text("Cantaloupe Island")').click();
-    await expect(page.getByText("2 seleccionadas")).toBeVisible();
+    await expect(page.getByText("2/3 seleccionadas")).toBeVisible();
 
     await page.locator('button:has-text("Take Five")').click();
-    await expect(page.getByText("3 seleccionadas")).toBeVisible();
+    await expect(page.getByText("3/3 seleccionadas")).toBeVisible();
+
+    // At 3/3, a 4th song should be disabled and not selectable
+    const blueMonkBtn = page.locator('button:has-text("Blue Monk")');
+    await expect(blueMonkBtn).toBeDisabled();
+    await blueMonkBtn.click({ force: true }); // force click the disabled button
+    await expect(page.getByText("3/3 seleccionadas")).toBeVisible(); // still 3
 
     // Deselecting one decreases the count
     await page.locator('button:has-text("Take Five")').click();
-    await expect(page.getByText("2 seleccionadas")).toBeVisible();
+    await expect(page.getByText("2/3 seleccionadas")).toBeVisible();
+
+    // After deselecting, Blue Monk should be enabled again
+    await expect(blueMonkBtn).toBeEnabled();
   });
 
   test("8 - Atras button preserves instrument and alias state", async ({
@@ -251,7 +260,7 @@ test.describe.serial("Participant Registration Flow", () => {
     ).toBeVisible({ timeout: 10000 });
     await page.locator('button:has-text("Watermelon Man")').click();
     await page.locator('button:has-text("So What")').click();
-    await expect(page.getByText("2 seleccionadas")).toBeVisible();
+    await expect(page.getByText("2/3 seleccionadas")).toBeVisible();
 
     // Go to step 3
     await page.locator('button:has-text("Siguiente")').last().click();

@@ -23,7 +23,7 @@ export const sel = {
 
     songSearch: 'input[placeholder="Buscar cancion..."]',
     selectedCount: (n: number) =>
-      `text=${n} seleccionada${n !== 1 ? "s" : ""}`,
+      `text=${n}/3 seleccionada${n !== 1 ? "s" : ""}`,
 
     confirmHeading: "text=Confirmar registro",
     btnRegister: 'button:has-text("Registrarme")',

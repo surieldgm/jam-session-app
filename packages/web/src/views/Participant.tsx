@@ -8,6 +8,8 @@ function getEventId(): string {
   return `jam-${new Date().toISOString().split("T")[0]}`;
 }
 
+const MAX_SONGS = 3;
+
 const INSTRUMENTS: { id: Instrument; label: string; icon: string }[] = [
   { id: "drums", label: "Bateria", icon: "🥁" },
   { id: "bass", label: "Bajo", icon: "🎸" },
@@ -55,10 +57,12 @@ function SongSelector({
   catalog,
   selectedSongs,
   onToggle,
+  maxReached,
 }: {
   catalog: { id: string; title: string; artist: string }[];
   selectedSongs: string[];
   onToggle: (songId: string) => void;
+  maxReached: boolean;
 }) {
   const [search, setSearch] = useState("");
 
@@ -78,7 +82,7 @@ function SongSelector({
         Elige tus canciones
       </h2>
       <p className="mb-4 text-center text-sm text-(--color-text-muted)">
-        Selecciona las canciones que te gustaria tocar
+        Selecciona hasta {MAX_SONGS} canciones que te gustaria tocar
       </p>
 
       {/* Search */}
@@ -99,14 +103,18 @@ function SongSelector({
         )}
         {filtered.map((song) => {
           const isSelected = selectedSongs.includes(song.id);
+          const isDisabled = !isSelected && maxReached;
           return (
             <button
               key={song.id}
               onClick={() => onToggle(song.id)}
+              disabled={isDisabled}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
                 isSelected
                   ? "bg-(--color-amber)/10 text-(--color-amber)"
-                  : "bg-(--color-bg-card) text-(--color-text-secondary) hover:bg-(--color-bg-hover)"
+                  : isDisabled
+                    ? "bg-(--color-bg-card) text-(--color-text-muted) opacity-40 cursor-not-allowed"
+                    : "bg-(--color-bg-card) text-(--color-text-secondary) hover:bg-(--color-bg-hover)"
               }`}
             >
               <span
@@ -129,8 +137,8 @@ function SongSelector({
         })}
       </div>
 
-      <p className="mt-3 text-center text-xs text-(--color-text-muted)">
-        {selectedSongs.length} seleccionada{selectedSongs.length !== 1 ? "s" : ""}
+      <p className={`mt-3 text-center text-xs ${maxReached ? "font-semibold text-(--color-amber)" : "text-(--color-text-muted)"}`}>
+        {selectedSongs.length}/{MAX_SONGS} seleccionada{selectedSongs.length !== 1 ? "s" : ""}
       </p>
     </div>
   );
@@ -230,11 +238,13 @@ export default function Participant() {
   }, []);
 
   const handleSongToggle = useCallback((songId: string) => {
-    setSelectedSongs((prev) =>
-      prev.includes(songId)
-        ? prev.filter((id) => id !== songId)
-        : [...prev, songId]
-    );
+    setSelectedSongs((prev) => {
+      if (prev.includes(songId)) {
+        return prev.filter((id) => id !== songId);
+      }
+      if (prev.length >= MAX_SONGS) return prev;
+      return [...prev, songId];
+    });
   }, []);
 
   const handleConfirm = useCallback(() => {
@@ -323,6 +333,7 @@ export default function Participant() {
             catalog={catalog}
             selectedSongs={selectedSongs}
             onToggle={handleSongToggle}
+            maxReached={selectedSongs.length >= MAX_SONGS}
           />
 
           <div className="flex w-full gap-3">
