@@ -81,7 +81,9 @@ export type ClientMessage =
   | { type: "confirm_block"; payload: { blockIndex: number } }
   | { type: "request_suggestion" }
   | { type: "timer_action"; payload: { action: "start" | "pause" | "reset" } }
-  | { type: "end_event" };
+  | { type: "end_event" }
+  | { type: "queue_remove"; payload: { musicianId: string } }
+  | { type: "emergency_add"; payload: { alias: string; instrument: Instrument } };
 
 export type ServerMessage =
   | { type: "full_state"; payload: JamState }
@@ -90,6 +92,7 @@ export type ServerMessage =
   | { type: "mc_auth_ok" }
   | { type: "mc_auth_fail" }
   | { type: "musician_joined"; payload: Musician }
+  | { type: "musician_removed"; payload: { musicianId: string } }
   | { type: "catalog_updated"; payload: { catalog: Song[] } }
   | { type: "new_proposal"; payload: Song }
   | { type: "proposal_resolved"; payload: { songId: string; approved: boolean } }

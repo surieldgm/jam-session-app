@@ -189,6 +189,12 @@ export default class JamRoom implements Party.Server {
       case "end_event":
         await this.handleEndEvent();
         break;
+      case "queue_remove":
+        await this.handleQueueRemove(msg.payload, sender);
+        break;
+      case "emergency_add":
+        await this.handleEmergencyAdd(msg.payload, sender);
+        break;
     }
   }
 
@@ -449,6 +455,57 @@ export default class JamRoom implements Party.Server {
         }
         break;
     }
+  }
+
+  private async handleQueueRemove(
+    payload: { musicianId: string },
+    sender: Party.Connection
+  ) {
+    // Only MC can remove musicians
+    if (!this.mcConnections.has(sender.id)) return;
+
+    const idx = this.state.waitingQueue.findIndex(
+      (m) => m.id === payload.musicianId
+    );
+    if (idx === -1) return;
+
+    this.state.waitingQueue.splice(idx, 1);
+    this.mutate();
+
+    // Broadcast removal to all clients
+    this.broadcast({
+      type: "musician_removed",
+      payload: { musicianId: payload.musicianId },
+    });
+
+    await saveSnapshot(this.room, this.state);
+    console.log(`[QUEUE] Musician ${payload.musicianId} removed by MC`);
+  }
+
+  private async handleEmergencyAdd(
+    payload: { alias: string; instrument: string },
+    sender: Party.Connection
+  ) {
+    // Only MC can emergency-add musicians
+    if (!this.mcConnections.has(sender.id)) return;
+
+    const musician: Musician = {
+      id: crypto.randomUUID(),
+      alias: payload.alias,
+      instrument: payload.instrument as Musician["instrument"],
+      topSongs: [],
+      proposedSongs: [],
+      playCount: 0,
+      registeredAt: Date.now(),
+    };
+
+    this.state.waitingQueue.push(musician);
+    this.mutate();
+
+    this.broadcast({ type: "musician_joined", payload: musician });
+
+    await saveSnapshot(this.room, this.state);
+    console.log(`[QUEUE] Musician "${payload.alias}" emergency-added by MC`);
   }
 
   private async handleEndEvent() {

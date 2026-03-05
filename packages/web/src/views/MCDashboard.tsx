@@ -178,7 +178,19 @@ function TabLive({
 }
 
 // ─── Tab: Cola ─────────────────────────────────────────────────────
-function TabQueue({ queue }: { queue: Musician[] }) {
+function TabQueue({
+  queue,
+  onRemove,
+  onEmergencyAdd,
+}: {
+  queue: Musician[];
+  onRemove: (musicianId: string) => void;
+  onEmergencyAdd: (alias: string, instrument: Instrument) => void;
+}) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addAlias, setAddAlias] = useState("");
+  const [addInstrument, setAddInstrument] = useState<Instrument>("drums");
+
   const grouped = useMemo(() => {
     const groups: Record<string, Musician[]> = {};
     for (const inst of INSTRUMENT_ORDER) {
@@ -191,22 +203,74 @@ function TabQueue({ queue }: { queue: Musician[] }) {
     return groups;
   }, [queue]);
 
-  if (queue.length === 0) {
-    return (
-      <div className="flex flex-col items-center py-16 text-center">
-        <p className="text-4xl">👥</p>
-        <p className="mt-4 text-(--color-text-secondary)">
-          No hay musicos en espera
-        </p>
-      </div>
-    );
-  }
+  const handleAdd = useCallback(() => {
+    if (!addAlias.trim()) return;
+    onEmergencyAdd(addAlias.trim(), addInstrument);
+    setAddAlias("");
+    setAddInstrument("drums");
+    setShowAddForm(false);
+  }, [addAlias, addInstrument, onEmergencyAdd]);
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-(--color-text-muted)">
-        {queue.length} musico{queue.length !== 1 ? "s" : ""} en espera
-      </p>
+      {/* Header with count + emergency add button */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-(--color-text-muted)">
+          {queue.length} musico{queue.length !== 1 ? "s" : ""} en espera
+        </p>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="rounded-lg bg-(--color-amber) px-3 py-1.5 text-xs font-semibold text-black"
+        >
+          {showAddForm ? "Cancelar" : "+ Emergencia"}
+        </button>
+      </div>
+
+      {/* Emergency add form */}
+      {showAddForm && (
+        <div className="rounded-xl border border-(--color-amber)/30 bg-(--color-bg-card) p-4">
+          <h4 className="mb-3 text-sm font-semibold text-(--color-amber)">
+            Agregar musico de emergencia
+          </h4>
+          <div className="flex flex-col gap-2">
+            <input
+              type="text"
+              placeholder="Nombre o alias"
+              value={addAlias}
+              onChange={(e) => setAddAlias(e.target.value)}
+              className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) placeholder:text-(--color-text-muted) outline-none focus:border-(--color-amber)"
+            />
+            <select
+              value={addInstrument}
+              onChange={(e) => setAddInstrument(e.target.value as Instrument)}
+              className="w-full rounded-lg border border-(--color-bg-hover) bg-(--color-bg-secondary) px-3 py-2 text-sm text-(--color-text-primary) outline-none focus:border-(--color-amber)"
+            >
+              {INSTRUMENT_ORDER.map((inst) => (
+                <option key={inst} value={inst}>
+                  {INSTRUMENT_ICONS[inst]} {inst}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAdd}
+              disabled={!addAlias.trim()}
+              className="mt-1 w-full rounded-lg bg-(--color-amber) py-2 text-sm font-semibold text-black disabled:opacity-40"
+            >
+              Agregar a la cola
+            </button>
+          </div>
+        </div>
+      )}
+
+      {queue.length === 0 && (
+        <div className="flex flex-col items-center py-12 text-center">
+          <p className="text-4xl">👥</p>
+          <p className="mt-4 text-(--color-text-secondary)">
+            No hay musicos en espera
+          </p>
+        </div>
+      )}
+
       {INSTRUMENT_ORDER.map((inst) => {
         const musicians = grouped[inst];
         if (!musicians || musicians.length === 0) return null;
@@ -234,6 +298,13 @@ function TabQueue({ queue }: { queue: Musician[] }) {
                   <span className="ml-auto text-xs text-(--color-text-muted)">
                     {m.playCount} vez{m.playCount !== 1 ? "es" : ""}
                   </span>
+                  <button
+                    onClick={() => onRemove(m.id)}
+                    className="ml-2 rounded-full p-1 text-xs text-red-400 hover:bg-red-400/20 hover:text-red-300"
+                    title="Eliminar de la cola"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>
@@ -788,6 +859,20 @@ export default function MCDashboard() {
     send({ type: "request_suggestion" });
   }, [send]);
 
+  const handleQueueRemove = useCallback(
+    (musicianId: string) => {
+      send({ type: "queue_remove", payload: { musicianId } });
+    },
+    [send]
+  );
+
+  const handleEmergencyAdd = useCallback(
+    (alias: string, instrument: Instrument) => {
+      send({ type: "emergency_add", payload: { alias, instrument } });
+    },
+    [send]
+  );
+
   if (!authenticated) {
     return <PinGate onAuth={handleAuth} />;
   }
@@ -833,7 +918,11 @@ export default function MCDashboard() {
         )}
 
         {activeTab === "queue" && (
-          <TabQueue queue={state?.waitingQueue ?? []} />
+          <TabQueue
+            queue={state?.waitingQueue ?? []}
+            onRemove={handleQueueRemove}
+            onEmergencyAdd={handleEmergencyAdd}
+          />
         )}
 
         {activeTab === "setlist" && (

@@ -65,6 +65,19 @@ export function usePartySocket({ eventId }: UsePartySocketOptions): UsePartySock
           });
           break;
 
+        case "musician_removed":
+          setState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              waitingQueue: prev.waitingQueue.filter(
+                (m) => m.id !== msg.payload.musicianId
+              ),
+              version: prev.version + 1,
+            };
+          });
+          break;
+
         case "catalog_updated":
           setState((prev) => {
             if (!prev) return prev;
